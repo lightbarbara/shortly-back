@@ -53,7 +53,7 @@ export async function getUserData(req, res) {
         GROUP BY users.id, users.name, urls."userId"
         `, [user.id])
 
-        console.log(response.rows[0])
+        res.status(200).send(response.rows[0])
 
     } catch (err) {
 
