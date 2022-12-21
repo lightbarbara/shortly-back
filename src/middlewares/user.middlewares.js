@@ -1,4 +1,4 @@
-import { userSignUpSchema, userSignInSchema } from "../schemas/user.schema"
+import { userSignUpSchema, userSignInSchema } from "../schemas/user.schema.js"
 import connection from '../database/db.js'
 import bcrypt from 'bcrypt'
 
@@ -11,7 +11,7 @@ export async function validateSignUp(req, res, next) {
         return
     }
 
-    const validation = userSignUpSchema.validate(customer, { abortEarly: false })
+    const validation = userSignUpSchema.validate(user, { abortEarly: false })
 
     if (validation.error) {
         const errors = validation.error.details.map(detail => detail.message)
@@ -55,19 +55,77 @@ export async function validateSignIn(req, res, next) {
 
         const userExists = await connection.query(`SELECT * FROM users WHERE email=$1`, [user.email])
 
-        const validatePassword = bcrypt.compareSync(user.password, userExists.password)
-
-        if (!userExists || !validatePassword) {
+        if (userExists.rows.length === 0) {
             res.status(401).send({ message: 'Dados incorretos' })
+            return
         }
 
-        const userLoggedIn = await connection.query(`SELECT * FROM sessions WHERE id=$1`, [userExists.id])
+        const validatePassword = bcrypt.compareSync(user.password, userExists.rows[0].password)
 
-        if (userLoggedIn) {
-            await connection.query(`DELETE FROM sessions WHERE id=$1`, [userExists.id])
+        if (!validatePassword) {
+            res.status(401).send({ message: 'Dados incorretos' })
+            return
         }
 
-        res.locals.user = userExists
+        const userLoggedIn = await connection.query(`SELECT * FROM sessions WHERE id=$1`, [userExists.rows[0].id])
+
+        if (userLoggedIn.rows.length > 0) {
+            await connection.query(`DELETE FROM sessions WHERE id=$1`, [userExists.rows[0].id])
+        }
+
+        res.locals.user = userExists.rows[0]
+
+        next()
+
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
+
+}
+
+export async function validateAuth(req, res, next) {
+
+    const { authorization } = req.headers
+
+    if (!authorization) {
+        res.sendStatus(401)
+    }
+
+    const token = authorization.replace('Bearer ', '')
+
+    try {
+
+        const session = await connection.query(`SELECT * FROM sessions WHERE token=$1`, [token])
+
+        if (session.rows.length === 0) {
+            res.sendStatus(401)
+            return
+        }
+
+        res.locals.session = session.rows[0]
+
+        next()
+
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
+
+}
+
+export async function validateUserExistence(req, res, next) {
+
+    const { userId } = res.locals.session
+
+    try {
+
+        const userExists = await connection.query(`SELECT * FROM users WHERE id=$1`, [userId])
+
+        if (userExists.rows.length === 0) {
+            res.sendStatus(404)
+            return
+        }
+
+        res.locals.user = userExists.rows[0]
 
         next()
 
