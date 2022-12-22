@@ -1,11 +1,9 @@
 import connection from "../database/db.js";
 import { urlSchema } from "../schemas/url.schema.js";
 
-export async function validateUrl(req, res, next) {
+export function validateUrl(req, res, next) {
 
     const body = req.body
-
-    const { session } = res.locals
 
     const validation = urlSchema.validate(body, { abortEarly: false })
 
@@ -17,8 +15,29 @@ export async function validateUrl(req, res, next) {
 
     res.locals.url = body.url
 
-    res.locals.session = session
-
     next()
+
+}
+
+export async function validateUrlExistence(req, res, next) {
+
+    const { id } = req.params
+
+    try {
+
+        const urlExists = connection.query(`SELECT * FROM urls WHERE id=$1`, [id])
+
+        if ((await urlExists).rows.length === 0) {
+            res.sendStatus(404)
+            return
+        }
+
+        res.locals.id = id
+
+        next()
+
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
 
 }
