@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteUrl, getUrlById, openUrl, shortenUrl } from "../controllers/url.controller.js";
+import { deleteUrl, getRanking, getUrlById, openUrl, shortenUrl } from "../controllers/url.controller.js";
 import { validateUrl, validateUrlExistenceById, validateUrlExistenceByShortUrl, validateUrlUser } from "../middlewares/url.middlewares.js";
 import { validateAuth } from "../middlewares/user.middlewares.js";
 
@@ -13,6 +13,6 @@ router.get('/urls/open/:shortUrl', validateUrlExistenceByShortUrl, openUrl)
 
 router.delete('/urls/:id',validateAuth, validateUrlExistenceById, validateUrlUser, deleteUrl)
 
-router.get('/ranking',)
+router.get('/ranking', getRanking)
 
 export default router
