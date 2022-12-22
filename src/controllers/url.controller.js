@@ -34,3 +34,19 @@ export async function getUrlById(req, res) {
     }
 
 }
+
+export async function openUrl(req, res) {
+
+    const { url } = res.locals
+
+    try {
+
+        connection.query(`UPDATE urls SET "visitCount"=$1 + 1 WHERE id=$2`, [url.visitCount, url.id])
+
+        res.redirect(url.url)
+
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
+
+}

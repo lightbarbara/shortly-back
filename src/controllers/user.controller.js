@@ -45,7 +45,7 @@ export async function getUserData(req, res) {
     try {
 
         const response = await connection.query(`
-        SELECT users.id, users.name, SUM(urls."visitCount") AS "visitCount", json_agg(json_build_object('id', urls.id, 'shortUrl', urls."shortUrl", 'url', urls.url, 'visitCount', urls."visitCount")) AS "shortenedUrls"
+        SELECT users.id, users.name, CAST(SUM(urls."visitCount") AS INT) AS "visitCount", json_agg(json_build_object('id', urls.id, 'shortUrl', urls."shortUrl", 'url', urls.url, 'visitCount', urls."visitCount")) AS "shortenedUrls"
         FROM users
         JOIN urls
         ON users.id = urls."userId"
