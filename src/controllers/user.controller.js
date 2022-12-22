@@ -56,7 +56,7 @@ export async function getUserData(req, res) {
         res.status(200).send(response.rows[0])
 
     } catch (err) {
-
+        res.status(500).send(err.message)
     }
 
 }
