@@ -15,7 +15,6 @@ export async function validateSignUp(req, res, next) {
 
     if (validation.error) {
         const errors = validation.error.details.map(detail => detail.message)
-
         res.status(422).send({ message: errors })
         return
     }
@@ -89,6 +88,7 @@ export async function validateAuth(req, res, next) {
 
     if (!authorization) {
         res.sendStatus(401)
+        return
     }
 
     const token = authorization.replace('Bearer ', '')

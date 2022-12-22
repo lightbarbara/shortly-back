@@ -50,3 +50,19 @@ export async function openUrl(req, res) {
     }
 
 }
+
+export async function deleteUrl(req, res) {
+
+    const { id } = res.locals
+
+    try {
+
+        await connection.query(`DELETE FROM urls WHERE id=$1`, [id])
+
+        res.sendStatus(204)
+
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
+
+}

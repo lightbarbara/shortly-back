@@ -34,6 +34,8 @@ export async function validateUrlExistenceById(req, res, next) {
 
         res.locals.id = id
 
+        res.locals.url = urlExists.rows[0]
+
         next()
 
     } catch (err) {
@@ -62,5 +64,18 @@ export async function validateUrlExistenceByShortUrl(req, res, next) {
     } catch (err) {
         res.status(500).send(err.message)
     }
+
+}
+
+export function validateUrlUser(req, res, next) {
+
+    const { url, session } = res.locals
+
+    if (session.userId !== url.userId) {
+        res.sendStatus(401)
+        return
+    }
+
+    next()
 
 }
