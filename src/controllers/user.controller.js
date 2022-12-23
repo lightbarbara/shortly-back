@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt'
 import connection from '../database/db.js'
 import { v4 as uuid } from 'uuid'
+import { getUserDataConnection, signInConnection, signUpConnection } from '../repositories/user.repositories.js'
 
 export async function signUp(req, res) {
 
@@ -10,7 +11,7 @@ export async function signUp(req, res) {
 
     try {
 
-        await connection.query(`INSERT INTO users (name, email, password) VALUES ($1, $2, $3);`, [name, email, encryptedPassword])
+        await signUpConnection(name, email, encryptedPassword)
 
         res.sendStatus(201)
 
@@ -28,7 +29,7 @@ export async function signIn(req, res) {
 
         const token = uuid()
 
-        await connection.query(`INSERT INTO sessions ("userId", token) VALUES ($1, $2)`, [id, token])
+        await signInConnection(id, token)
 
         res.status(200).send({ token })
 
@@ -44,15 +45,7 @@ export async function getUserData(req, res) {
 
     try {
 
-        const response = await connection.query(`
-        SELECT users.id, users.name, CAST(COALESCE(SUM(urls."visitCount"), 0) AS INT) AS "visitCount", 
-        COALESCE(json_agg(json_build_object('id', urls.id, 'shortUrl', urls."shortUrl", 'url', urls.url, 'visitCount', urls."visitCount")) FILTER (WHERE urls.id IS NOT NULL), '[]') AS "shortenedUrls"
-        FROM users
-        LEFT JOIN urls
-        ON users.id = urls."userId"
-        WHERE users.id=$1
-        GROUP BY users.id, users.name, urls."userId"
-        `, [user.id])
+        const response = await getUserDataConnection(user)
 
         res.status(200).send(response.rows[0])
 

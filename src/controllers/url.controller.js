@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid"
 import connection from "../database/db.js"
+import { deleteUrlConnection, getRankingConnection, getUrlByIdConnection, openUrlConnection, shortenUrlConnection } from "../repositories/url.repositories.js"
 
 export async function shortenUrl(req, res) {
 
@@ -9,7 +10,7 @@ export async function shortenUrl(req, res) {
 
     try {
 
-        await connection.query(`INSERT INTO urls (url, "shortUrl", "userId") VALUES ($1, $2, $3)`, [url, shortUrl, session.userId])
+        await shortenUrlConnection(url, shortUrl, session)
 
         res.status(201).send({ shortUrl })
 
@@ -25,7 +26,7 @@ export async function getUrlById(req, res) {
 
     try {
 
-        const url = await connection.query(`SELECT id, "shortUrl", url FROM urls WHERE id=$1`, [id])
+        const url = await getUrlByIdConnection(id)
 
         res.status(200).send(url.rows[0])
 
@@ -41,7 +42,7 @@ export async function openUrl(req, res) {
 
     try {
 
-        connection.query(`UPDATE urls SET "visitCount"=$1 + 1 WHERE id=$2`, [url.visitCount, url.id])
+        await openUrlConnection(url)
 
         res.redirect(url.url)
 
@@ -57,7 +58,7 @@ export async function deleteUrl(req, res) {
 
     try {
 
-        await connection.query(`DELETE FROM urls WHERE id=$1`, [id])
+        await deleteUrlConnection(id)
 
         res.sendStatus(204)
 
@@ -71,15 +72,7 @@ export async function getRanking(req, res) {
 
     try {
 
-        const ranking = await connection.query(`
-        SELECT users.id, users.name, CAST(COUNT(urls."userId") AS INT) AS "linksCount", CAST(COALESCE(SUM(urls."visitCount"), 0) AS INT) AS "visitCount"
-        FROM users
-        LEFT JOIN urls
-        ON users.id = urls."userId"
-        GROUP BY users.id, users.name
-        ORDER BY "visitCount" DESC
-        LIMIT 10;
-        `)
+        const ranking = await getRankingConnection()
 
         res.status(200).send(ranking.rows)
 

@@ -1,6 +1,7 @@
 import { userSignUpSchema, userSignInSchema } from "../schemas/user.schema.js"
 import connection from '../database/db.js'
 import bcrypt from 'bcrypt'
+import { validateAuthConnection, validateSignInConnectionUserExists, validateSignInConnectionUserLoggedIn, validateSignInConnectionUserLoggedInDelete, validateSignUpConnection, validateUserExistenceConnection } from "../repositories/user.repositories.js"
 
 export async function validateSignUp(req, res, next) {
 
@@ -21,7 +22,7 @@ export async function validateSignUp(req, res, next) {
 
     try {
 
-        const emailExists = await connection.query(`SELECT * FROM users WHERE email=$1`, [user.email])
+        const emailExists = await validateSignUpConnection(user)
 
         if (emailExists.rows.length > 0) {
             res.sendStatus(409)
@@ -52,7 +53,7 @@ export async function validateSignIn(req, res, next) {
 
     try {
 
-        const userExists = await connection.query(`SELECT * FROM users WHERE email=$1`, [user.email])
+        const userExists = await validateSignInConnectionUserExists(user)
 
         if (userExists.rows.length === 0) {
             res.status(401).send({ message: 'Dados incorretos' })
@@ -66,10 +67,10 @@ export async function validateSignIn(req, res, next) {
             return
         }
 
-        const userLoggedIn = await connection.query(`SELECT * FROM sessions WHERE id=$1`, [userExists.rows[0].id])
+        const userLoggedIn = await validateSignInConnectionUserLoggedIn(userExists)
 
         if (userLoggedIn.rows.length > 0) {
-            await connection.query(`DELETE FROM sessions WHERE id=$1`, [userExists.rows[0].id])
+            await validateSignInConnectionUserLoggedInDelete(userExists)
         }
 
         res.locals.user = userExists.rows[0]
@@ -95,7 +96,7 @@ export async function validateAuth(req, res, next) {
 
     try {
 
-        const session = await connection.query(`SELECT * FROM sessions WHERE token=$1`, [token])
+        const session = await validateAuthConnection(token)
 
         if (session.rows.length === 0) {
             res.sendStatus(401)
@@ -118,7 +119,7 @@ export async function validateUserExistence(req, res, next) {
 
     try {
 
-        const userExists = await connection.query(`SELECT * FROM users WHERE id=$1`, [userId])
+        const userExists = await validateUserExistenceConnection(userId)
 
         if (userExists.rows.length === 0) {
             res.sendStatus(404)

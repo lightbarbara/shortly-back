@@ -1,4 +1,5 @@
 import connection from "../database/db.js";
+import { validateUrlExistenceByIdConnection, validateUrlExistenceByShortUrlConnection } from "../repositories/url.repositories.js";
 import { urlSchema } from "../schemas/url.schema.js";
 
 export function validateUrl(req, res, next) {
@@ -25,7 +26,7 @@ export async function validateUrlExistenceById(req, res, next) {
 
     try {
 
-        const urlExists = await connection.query(`SELECT * FROM urls WHERE id=$1`, [id])
+        const urlExists = await validateUrlExistenceByIdConnection(id)
 
         if (urlExists.rows.length === 0) {
             res.sendStatus(404)
@@ -50,7 +51,7 @@ export async function validateUrlExistenceByShortUrl(req, res, next) {
 
     try {
 
-        const urlExists = await connection.query(`SELECT * FROM urls WHERE "shortUrl"=$1`, [shortUrl])
+        const urlExists = await validateUrlExistenceByShortUrlConnection(shortUrl)
 
         if (urlExists.rows.length === 0) {
             res.sendStatus(404)
